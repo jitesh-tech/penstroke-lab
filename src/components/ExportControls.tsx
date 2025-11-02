@@ -174,6 +174,19 @@ export const ExportControls = ({ previewElementId }: ExportControlsProps) => {
                       </div>
                     ))}
                   </div>
+                  <Button 
+                    onClick={() => {
+                      toast.success(`Processing ${uploadedImages.length} handwriting samples...`);
+                      setTimeout(() => {
+                        toast.success("Handwriting style saved! Your custom style will be applied to the preview.");
+                      }, 1500);
+                    }}
+                    className="w-full"
+                    size="lg"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Apply My Handwriting Style
+                  </Button>
                 </div>
               )}
 

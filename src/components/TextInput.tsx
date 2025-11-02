@@ -57,6 +57,7 @@ export const TextInput = ({ value, onChange }: TextInputProps) => {
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = "en-US";
+    recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
       setIsListening(true);
@@ -69,17 +70,24 @@ export const TextInput = ({ value, onChange }: TextInputProps) => {
         clearTimeout(silenceTimer);
       }
 
+      let interimTranscript = "";
       let finalTranscript = "";
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
           finalTranscript += transcript + " ";
+        } else {
+          interimTranscript += transcript;
         }
       }
 
       if (finalTranscript) {
-        onChange(value + finalTranscript);
+        // Append final transcript to the existing value
+        const currentValue = value;
+        const newValue = currentValue + finalTranscript;
+        onChange(newValue);
+        toast.success("Text captured: " + finalTranscript.substring(0, 30) + "...");
       }
 
       // Set new silence timer (2 seconds)
