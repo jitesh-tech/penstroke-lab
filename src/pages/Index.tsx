@@ -54,7 +54,10 @@ const Index = () => {
 
             <div className="bg-card rounded-lg p-6 shadow-sm">
               <h2 className="text-lg font-semibold mb-4">Export & Share</h2>
-              <ExportControls previewElementId="handwriting-preview" />
+              <ExportControls 
+                previewElementId="handwriting-preview" 
+                onTextExtracted={setText}
+              />
             </div>
           </div>
 

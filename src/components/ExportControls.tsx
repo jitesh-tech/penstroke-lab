@@ -16,11 +16,13 @@ import { Label } from "@/components/ui/label";
 
 interface ExportControlsProps {
   previewElementId: string;
+  onTextExtracted?: (text: string) => void;
 }
 
-export const ExportControls = ({ previewElementId }: ExportControlsProps) => {
+export const ExportControls = ({ previewElementId, onTextExtracted }: ExportControlsProps) => {
   const [isExporting, setIsExporting] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleExportPDF = async () => {
     setIsExporting(true);
@@ -134,8 +136,8 @@ export const ExportControls = ({ previewElementId }: ExportControlsProps) => {
             <DialogTitle>Upload Your Handwriting Samples</DialogTitle>
             <DialogDescription className="space-y-4">
               <p>
-                Upload 3-5 samples of your handwriting. The AI will analyze your style
-                and generate text that matches your unique handwriting!
+                Upload 1-5 samples of your handwriting. The AI will analyze and extract the text
+                from your handwriting images and populate it in the text input box!
               </p>
               
               <div className="space-y-3">
@@ -175,17 +177,49 @@ export const ExportControls = ({ previewElementId }: ExportControlsProps) => {
                     ))}
                   </div>
                   <Button 
-                    onClick={() => {
-                      toast.success(`Processing ${uploadedImages.length} handwriting samples...`);
-                      setTimeout(() => {
-                        toast.success("Handwriting style saved! Your custom style will be applied to the preview.");
-                      }, 1500);
+                    onClick={async () => {
+                      setIsProcessing(true);
+                      toast.info(`Processing ${uploadedImages.length} handwriting sample(s)...`);
+                      
+                      try {
+                        const response = await fetch(
+                          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-handwriting`,
+                          {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ images: uploadedImages }),
+                          }
+                        );
+
+                        if (!response.ok) {
+                          const errorData = await response.json();
+                          throw new Error(errorData.error || 'Failed to extract text');
+                        }
+
+                        const data = await response.json();
+                        const extractedText = data.text || '';
+                        
+                        if (extractedText && onTextExtracted) {
+                          onTextExtracted(extractedText);
+                          toast.success("Text extracted from your handwriting!");
+                        } else {
+                          toast.error("No text found in the images");
+                        }
+                      } catch (error) {
+                        console.error("Error processing handwriting:", error);
+                        toast.error(error instanceof Error ? error.message : "Failed to process handwriting");
+                      } finally {
+                        setIsProcessing(false);
+                      }
                     }}
                     className="w-full"
                     size="lg"
+                    disabled={isProcessing}
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    Apply My Handwriting Style
+                    {isProcessing ? "Processing..." : "Extract Text from Handwriting"}
                   </Button>
                 </div>
               )}
@@ -193,20 +227,11 @@ export const ExportControls = ({ previewElementId }: ExportControlsProps) => {
               <div className="bg-muted p-4 rounded-lg">
                 <p className="text-sm font-medium mb-2">How it works:</p>
                 <ul className="text-sm space-y-1 list-disc list-inside">
-                  <li>Upload 3-5 clear samples of your handwriting</li>
-                  <li>AI analyzes stroke patterns, spacing, and style</li>
-                  <li>Generates new text in your personal handwriting</li>
-                  <li>Perfect consistency for any text length</li>
+                  <li>Upload 1-5 clear samples of your handwriting</li>
+                  <li>AI analyzes and extracts the text from images</li>
+                  <li>Extracted text appears in the input box</li>
+                  <li>Style it with different fonts and export to PDF</li>
                 </ul>
-              </div>
-
-              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-900 dark:text-blue-100">
-                  <strong>Note:</strong> Full AI-powered handwriting generation requires a backend
-                  ML service with models like GANs or Transformers. Images are stored locally
-                  in this demo. For production, integrate with a Python/Flask backend running
-                  handwriting synthesis models.
-                </p>
               </div>
             </DialogDescription>
           </DialogHeader>

@@ -12,7 +12,7 @@ interface TextInputProps {
 export const TextInput = ({ value, onChange }: TextInputProps) => {
   const [isListening, setIsListening] = useState(false);
   const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
-  const recognitionRef = useState<any>(null)[0];
+  const [recognition, setRecognition] = useState<any>(null);
 
   // Handle file upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,30 +41,29 @@ export const TextInput = ({ value, onChange }: TextInputProps) => {
     }
 
     // If already listening, stop
-    if (isListening && recognitionRef) {
-      recognitionRef.stop();
+    if (isListening && recognition) {
+      recognition.stop();
       if (silenceTimer) clearTimeout(silenceTimer);
       setIsListening(false);
+      setRecognition(null);
       toast.success("Voice input stopped");
       return;
     }
 
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-    const recognition = new SpeechRecognition();
+    const newRecognition = new SpeechRecognition();
     
-    Object.assign(recognitionRef, recognition);
+    newRecognition.continuous = true;
+    newRecognition.interimResults = true;
+    newRecognition.lang = "en-US";
+    newRecognition.maxAlternatives = 1;
 
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-    recognition.maxAlternatives = 1;
-
-    recognition.onstart = () => {
+    newRecognition.onstart = () => {
       setIsListening(true);
       toast.success("Start speaking now...");
     };
 
-    recognition.onresult = (event: any) => {
+    newRecognition.onresult = (event: any) => {
       // Clear existing silence timer
       if (silenceTimer) {
         clearTimeout(silenceTimer);
@@ -92,8 +91,8 @@ export const TextInput = ({ value, onChange }: TextInputProps) => {
 
       // Set new silence timer (2 seconds)
       const timer = setTimeout(() => {
-        if (recognition && isListening) {
-          recognition.stop();
+        if (newRecognition && isListening) {
+          newRecognition.stop();
           toast.info("Stopped due to silence");
         }
       }, 2000);
@@ -101,19 +100,22 @@ export const TextInput = ({ value, onChange }: TextInputProps) => {
       setSilenceTimer(timer);
     };
 
-    recognition.onerror = (event: any) => {
+    newRecognition.onerror = (event: any) => {
       console.error("Speech recognition error:", event.error);
       toast.error("Voice input error: " + event.error);
       setIsListening(false);
+      setRecognition(null);
       if (silenceTimer) clearTimeout(silenceTimer);
     };
 
-    recognition.onend = () => {
+    newRecognition.onend = () => {
       setIsListening(false);
+      setRecognition(null);
       if (silenceTimer) clearTimeout(silenceTimer);
     };
 
-    recognition.start();
+    setRecognition(newRecognition);
+    newRecognition.start();
   };
 
   return (
