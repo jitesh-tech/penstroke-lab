@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 
 export type PenColor = "black" | "blue" | "red";
 export type PageType = "plain" | "ruled" | "notebook";
-export type FontStyle = "cursive" | "print" | "elegant";
+export type FontStyle = "cursive" | "print" | "elegant" | "casual" | "friendly" | "stylish";
 
 interface SettingsPanelProps {
   fontSize: number;
@@ -114,6 +114,24 @@ export const SettingsPanel = ({
             <RadioGroupItem value="elegant" id="elegant" />
             <Label htmlFor="elegant" className="cursor-pointer font-handwriting-elegant text-lg">
               Elegant Script
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="casual" id="casual" />
+            <Label htmlFor="casual" className="cursor-pointer font-handwriting-casual text-lg">
+              Casual Notes
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="friendly" id="friendly" />
+            <Label htmlFor="friendly" className="cursor-pointer font-handwriting-friendly text-lg">
+              Friendly Hand
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="stylish" id="stylish" />
+            <Label htmlFor="stylish" className="cursor-pointer font-handwriting-stylish text-lg">
+              Stylish Signature
             </Label>
           </div>
         </RadioGroup>

@@ -11,6 +11,8 @@ interface TextInputProps {
 
 export const TextInput = ({ value, onChange }: TextInputProps) => {
   const [isListening, setIsListening] = useState(false);
+  const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
+  const recognitionRef = useState<any>(null)[0];
 
   // Handle file upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,15 +33,26 @@ export const TextInput = ({ value, onChange }: TextInputProps) => {
     reader.readAsText(file);
   };
 
-  // Handle voice input
+  // Handle voice input with silence detection
   const handleVoiceInput = () => {
     if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
       toast.error("Voice input is not supported in your browser");
       return;
     }
 
+    // If already listening, stop
+    if (isListening && recognitionRef) {
+      recognitionRef.stop();
+      if (silenceTimer) clearTimeout(silenceTimer);
+      setIsListening(false);
+      toast.success("Voice input stopped");
+      return;
+    }
+
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     const recognition = new SpeechRecognition();
+    
+    Object.assign(recognitionRef, recognition);
 
     recognition.continuous = true;
     recognition.interimResults = true;
@@ -47,43 +60,52 @@ export const TextInput = ({ value, onChange }: TextInputProps) => {
 
     recognition.onstart = () => {
       setIsListening(true);
-      toast.success("Listening... Speak now!");
+      toast.success("Start speaking now...");
     };
 
     recognition.onresult = (event: any) => {
-      let interimTranscript = "";
+      // Clear existing silence timer
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+      }
+
       let finalTranscript = "";
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
           finalTranscript += transcript + " ";
-        } else {
-          interimTranscript += transcript;
         }
       }
 
       if (finalTranscript) {
         onChange(value + finalTranscript);
       }
+
+      // Set new silence timer (2 seconds)
+      const timer = setTimeout(() => {
+        if (recognition && isListening) {
+          recognition.stop();
+          toast.info("Stopped due to silence");
+        }
+      }, 2000);
+      
+      setSilenceTimer(timer);
     };
 
     recognition.onerror = (event: any) => {
       console.error("Speech recognition error:", event.error);
       toast.error("Voice input error: " + event.error);
       setIsListening(false);
+      if (silenceTimer) clearTimeout(silenceTimer);
     };
 
     recognition.onend = () => {
       setIsListening(false);
-      toast.success("Voice input stopped");
+      if (silenceTimer) clearTimeout(silenceTimer);
     };
 
-    if (isListening) {
-      recognition.stop();
-    } else {
-      recognition.start();
-    }
+    recognition.start();
   };
 
   return (
@@ -115,12 +137,12 @@ export const TextInput = ({ value, onChange }: TextInputProps) => {
           {isListening ? (
             <>
               <MicOff className="w-4 h-4 mr-2" />
-              Stop Recording
+              Stop Voice Input
             </>
           ) : (
             <>
               <Mic className="w-4 h-4 mr-2" />
-              Voice Input
+              Start Voice Input
             </>
           )}
         </Button>

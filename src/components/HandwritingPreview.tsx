@@ -49,6 +49,12 @@ export const HandwritingPreview = ({
         return "font-handwriting-print";
       case "elegant":
         return "font-handwriting-elegant";
+      case "casual":
+        return "font-handwriting-casual";
+      case "friendly":
+        return "font-handwriting-friendly";
+      case "stylish":
+        return "font-handwriting-stylish";
     }
   };
 

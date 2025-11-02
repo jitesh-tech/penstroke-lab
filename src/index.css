@@ -109,6 +109,18 @@ All colors MUST be HSL.
   .font-handwriting-elegant {
     font-family: 'Dancing Script', cursive;
   }
+
+  .font-handwriting-casual {
+    font-family: 'Caveat', cursive;
+  }
+
+  .font-handwriting-friendly {
+    font-family: 'Patrick Hand', cursive;
+  }
+
+  .font-handwriting-stylish {
+    font-family: 'Kaushan Script', cursive;
+  }
 }
 
 @layer utilities {
